@@ -1,12 +1,16 @@
 <template>
   <div class="kBuilderPreview">
-    <iframe 
-      ref="previewFrame" 
+    <iframe
+      ref="previewFrame"
       class="kBuilderPreview__frame"
+      @load="onFrameLoad"
       @sizechange="onResize"
       :style="{height: previewHeight + 'px'}"
     ></iframe>
-    <script type="text/template" ref="previewFrameContent">
+    <script
+      type="text/template"
+      ref="previewFrameContent"
+    >
       <html lang="en">
         <head>
           <meta charset="UTF-8">
@@ -18,8 +22,8 @@
             {{styles}}
           </style>
         </head>
-        <body>
-          <div id="content">
+        <body id="kirby-builder-body">
+          <div id="kirby-builder-content">
             {{markup}}
           </div>
         </body>
@@ -30,19 +34,19 @@
 
 <script>
 export default {
-  data () {
+  data() {
     return {
       previewFrameWindow: {},
       previewFrameDocument: {},
       previewHeight: 0
-    }
+    };
   },
   props: {
     markup: {
-      type: String,
+      type: String
     },
     styles: {
-      type: String,
+      type: String
     },
     script: {
       type: String
@@ -54,17 +58,12 @@ export default {
       type: Number
     }
   },
-  computed: {
-    heighto() {
-      return this.previewFrameDocument.getElementById("content").scrollHeight;
-    }
-  },
-  mounted () {
-    this.$root.$on('blockMoved', this.updateFrameIfEmpty)
+  mounted() {
+    this.$root.$on("blockMoved", this.updateFrameIfEmpty);
 
-    this.previewFrameWindow = this.$refs['previewFrame'].contentWindow
-    this.previewFrameDocument = this.previewFrameWindow.document
-    this.updateContent()
+    this.previewFrameWindow = this.$refs["previewFrame"].contentWindow;
+    this.previewFrameDocument = this.previewFrameWindow.document;
+    this.updateContent();
     let scriptCode = `
       sendResizeEvent = function () {
         if (window.frameElement) {
@@ -74,57 +73,80 @@ export default {
       sendResizedEvent = function () {
         console.log('on resize')
       }
-    `
-    let nativeCodeTag = document.createElement('script');
-    nativeCodeTag.type = 'text/javascript';
-    nativeCodeTag.innerHTML = scriptCode
-    this.previewFrameDocument.getElementsByTagName("body")[0].appendChild(nativeCodeTag)
-    this.updateContent()
+    `;
+    let nativeCodeTag = document.createElement("script");
+    nativeCodeTag.type = "text/javascript";
+    nativeCodeTag.innerHTML = scriptCode;
+    this.previewFrameDocument
+      .getElementsByTagName("body")[0]
+      .appendChild(nativeCodeTag);
+    this.updateContent();
     if (this.script) {
-      let scriptTag = document.createElement('script');
-      scriptTag.type = 'text/javascript';
-      scriptTag.innerHTML = this.script
-      this.previewFrameDocument.getElementsByTagName("body")[0].appendChild(scriptTag)
+      let scriptTag = document.createElement("script");
+      scriptTag.type = "text/javascript";
+      scriptTag.innerHTML = this.script;
+      this.previewFrameDocument
+        .getElementsByTagName("body")[0]
+        .appendChild(scriptTag);
     }
   },
   methods: {
-    updateContent () {
+    updateContent() {
       this.$nextTick().then(() => {
-        this.previewFrameWindow = this.$refs['previewFrame'].contentWindow
-        this.previewFrameDocument = this.previewFrameWindow.document
-        this.previewFrameDocument.open();
-        this.previewFrameDocument.write(this.$refs.previewFrameContent.innerHTML);
-        this.previewFrameDocument.close();
-        this.resize()
-      })
+        if (this.$refs["previewFrame"]) {
+          this.previewFrameWindow = this.$refs["previewFrame"].contentWindow;
+          this.previewFrameDocument = this.previewFrameWindow.document;
+          this.previewFrameDocument.open();
+          this.previewFrameDocument.write(
+            this.$refs.previewFrameContent.innerHTML
+          );
+          this.previewFrameDocument.close();
+          this.resize();
+        }
+      });
     },
     updateFrameIfEmpty() {
       this.$nextTick().then(() => {
-        const contentElement = this.$refs['previewFrame'].contentWindow.document.getElementById('content')
-        if (contentElement === null) {
-          this.updateContent()
+        if (this.$refs["previewFrame"]) {
+          const contentElement = this.$refs[
+            "previewFrame"
+          ].contentWindow.document.getElementById("kirby-builder-content");
+          if (contentElement === null) {
+            this.updateContent();
+          }
         }
-      })
+      });
     },
     onResize(event) {
-      this.resize()
+      this.resize();
     },
     resize() {
-      this.previewHeight = this.previewFrameDocument.getElementById("content").scrollHeight;
+      if (this.previewFrameDocument.getElementById) {
+        const content = this.previewFrameDocument.getElementById(
+          "kirby-builder-body"
+        );
+        const contentHeight = content.scrollHeight;
+        if (contentHeight > 0) {
+          this.previewHeight = contentHeight;
+        }
+      }
+    },
+    onFrameLoad() {
+      this.resize();
     }
   },
   watch: {
-    markup (content) {
-      this.updateContent()
+    markup(content) {
+      this.updateContent();
     },
-    styles (styles) {
-      this.updateContent()
+    styles(styles) {
+      this.updateContent();
     },
-    index (index) {
-      this.updateFrameIfEmpty()
+    index(index) {
+      this.updateFrameIfEmpty();
     }
   }
-}
+};
 </script>
 
 <style lang="stylus" scoped>
@@ -133,6 +155,7 @@ export default {
     &__frame
       border none
       width 100%
+      height 200px
 </style>
 
 
